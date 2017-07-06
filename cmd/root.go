@@ -8,7 +8,7 @@ import (
 
 	"strings"
 
-	"github.com/mpppk/docker-env-wrapper/env"
+	"github.com/mpppk/docker-env/env"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -22,12 +22,12 @@ const FORMAT_fLAG_DOCKER_COMPOSE = "compose"
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "docker-env-wrapper",
+	Use:   "docker-env IMAGE_NAME",
 	Short: "Generate Dockerfile or docker-compose.yml with host environment setting",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
-			fmt.Println("image name must be specified")
+			fmt.Println("Image name must be specified")
 			os.Exit(1)
 		}
 

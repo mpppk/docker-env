@@ -20,7 +20,7 @@
 
 package main
 
-import "github.com/mpppk/docker-env-wrapper/cmd"
+import "github.com/mpppk/docker-env/cmd"
 
 func main() {
 	cmd.Execute()
