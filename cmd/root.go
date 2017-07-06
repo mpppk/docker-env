@@ -6,13 +6,19 @@ import (
 
 	"io/ioutil"
 
+	"strings"
+
 	"github.com/mpppk/docker-env-wrapper/env"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var checkImageFlag bool
 var filterFlag string
 var formatFlag string
+
+const FORMAT_fLAG_DOCKER_FILE = "dockerfile"
+const FORMAT_fLAG_DOCKER_COMPOSE = "compose"
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -30,11 +36,36 @@ var RootCmd = &cobra.Command{
 			panic(err)
 		}
 
-		out := fmt.Sprintln("FROM " + args[0])
-		for k, v := range env {
-			out += fmt.Sprintf("ENV %v %v\n", k, v)
+		imageName := args[0]
+
+		switch formatFlag {
+		case FORMAT_fLAG_DOCKER_FILE:
+			out := fmt.Sprintln("FROM " + imageName)
+			for k, v := range env {
+				out += fmt.Sprintf("ENV %v %v\n", k, v)
+			}
+
+			fmt.Println(out)
+			ioutil.WriteFile("Dockerfile", []byte(out), 0777)
+		case FORMAT_fLAG_DOCKER_COMPOSE:
+			containerKey := strings.Replace(imageName, ":", "", -1)
+
+			d := map[string]interface{}{
+				"version": "3",
+				"services": map[string]interface{}{
+					containerKey: map[string]interface{}{
+						"image":       imageName,
+						"environment": env,
+					},
+				},
+			}
+			o, err := yaml.Marshal(d)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(string(o))
+			ioutil.WriteFile("docker-compose.yml", o, 0777)
 		}
-		ioutil.WriteFile("Dockerfile", []byte(out), 0777)
 	},
 }
 
@@ -50,7 +81,7 @@ func init() {
 
 	RootCmd.Flags().BoolVarP(&checkImageFlag, "check-image", "c", false, "Check image is exist on Docker Hub")
 	RootCmd.Flags().StringVarP(&filterFlag, "filter", "f", ".*", "Filter environment")
-	RootCmd.Flags().StringVarP(&formatFlag, "format", "F", "dockerfile", "Specify output format")
+	RootCmd.Flags().StringVarP(&formatFlag, "format", "F", FORMAT_fLAG_DOCKER_FILE, "Specify output format")
 }
 
 // initConfig reads in config file and ENV variables if set.
