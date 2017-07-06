@@ -13,8 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var checkImageFlag bool
-var filterFlag string
+var queryFlag string
 var formatFlag string
 
 const FORMAT_fLAG_DOCKER_FILE = "dockerfile"
@@ -23,7 +22,7 @@ const FORMAT_fLAG_DOCKER_COMPOSE = "compose"
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "docker-env IMAGE_NAME",
-	Short: "Generate Dockerfile or docker-compose.yml with host environment setting",
+	Short: "Generate Dockerfile or docker-compose.yml with host environment variables",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) < 1 {
@@ -31,7 +30,7 @@ var RootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		env, err := env.New().Filter(filterFlag)
+		env, err := env.New().Filter(queryFlag)
 		if err != nil {
 			panic(err)
 		}
@@ -79,9 +78,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.Flags().BoolVarP(&checkImageFlag, "check-image", "c", false, "Check image is exist on Docker Hub")
-	RootCmd.Flags().StringVarP(&filterFlag, "filter", "f", ".*", "Filter environment")
-	RootCmd.Flags().StringVarP(&formatFlag, "format", "F", FORMAT_fLAG_DOCKER_FILE, "Specify output format")
+	RootCmd.Flags().StringVarP(&queryFlag, "query", "q", ".*", "Filter host environment variables with regular expressions.")
+	RootCmd.Flags().StringVarP(&formatFlag, "format", "f", FORMAT_fLAG_DOCKER_FILE, "Specify output format. [dockerfile|compose]")
 }
 
 // initConfig reads in config file and ENV variables if set.
