@@ -6,6 +6,7 @@ import (
 
 	"path"
 
+	"github.com/mpppk/docker-env-wrapper/env"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -22,13 +23,11 @@ var RootCmd = &cobra.Command{
 	Short: "Generate Dockerfile or docker-compose.yml with host environment setting",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("aaa")
-
-		// image名がvalidかチェック
-		// 環境変数一覧を取得
-		// 環境変数名でfilter
-		// Dockerfileとして書き出し
-
+		env, err := env.New().Filter(filterFlag)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(env)
 	},
 }
 
