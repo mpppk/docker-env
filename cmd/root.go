@@ -8,6 +8,8 @@ import (
 
 	"strings"
 
+	"strconv"
+
 	"github.com/mpppk/docker-env/env"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -18,8 +20,9 @@ var formatFlag string
 
 const FORMAT_fLAG_DOCKER_FILE = "dockerfile"
 const FORMAT_fLAG_DOCKER_COMPOSE = "compose"
+const DOCKER_FILE_NAME = "Dockerfile"
+const DOCKER_COMPOSE_FILE_NAME = "docker-compose.yml"
 
-// RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "docker-env IMAGE_NAME",
 	Short: "Generate Dockerfile or docker-compose.yml with host environment variables",
@@ -35,35 +38,43 @@ var RootCmd = &cobra.Command{
 			panic(err)
 		}
 
-		imageName := args[0]
-
 		switch formatFlag {
 		case FORMAT_fLAG_DOCKER_FILE:
-			out := fmt.Sprintln("FROM " + imageName)
+			var out string
 			for k, v := range env {
 				out += fmt.Sprintf("ENV %v %v\n", k, v)
 			}
 
-			fmt.Println(out)
-			ioutil.WriteFile("Dockerfile", []byte(out), 0777)
+			for i, imageName := range args {
+				content := fmt.Sprintf("FROM %v\n%v", imageName, out)
+				fmt.Println(content)
+				suffix := strconv.Itoa(i)
+				if i == 0 {
+					suffix = ""
+				}
+				ioutil.WriteFile(DOCKER_FILE_NAME+suffix, []byte(content), 0777)
+			}
+
 		case FORMAT_fLAG_DOCKER_COMPOSE:
-			containerKey := strings.Replace(imageName, ":", "", -1)
+			services := map[string]interface{}{}
+			for _, imageName := range args {
+				containerKey := strings.Replace(imageName, ":", "", -1)
+				services[containerKey] = map[string]interface{}{
+					"image":       imageName,
+					"environment": env,
+				}
+			}
 
 			d := map[string]interface{}{
-				"version": "3",
-				"services": map[string]interface{}{
-					containerKey: map[string]interface{}{
-						"image":       imageName,
-						"environment": env,
-					},
-				},
+				"version":  "3",
+				"services": services,
 			}
 			o, err := yaml.Marshal(d)
 			if err != nil {
 				panic(err)
 			}
 			fmt.Println(string(o))
-			ioutil.WriteFile("docker-compose.yml", o, 0777)
+			ioutil.WriteFile(DOCKER_COMPOSE_FILE_NAME, o, 0777)
 		}
 	},
 }
@@ -82,6 +93,5 @@ func init() {
 	RootCmd.Flags().StringVarP(&formatFlag, "format", "f", FORMAT_fLAG_DOCKER_FILE, "Specify output format. [dockerfile|compose]")
 }
 
-// initConfig reads in config file and ENV variables if set.
 func initConfig() {
 }
