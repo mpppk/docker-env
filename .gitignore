@@ -1,0 +1,4 @@
+pkg/
+.idea/
+docker-compose.yml
+Dockerfile*
